@@ -1,12 +1,27 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState("all"); // all, pending, completed, canceled
+  const [activeFilter, setActiveFilter] = useState("all");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const navigate = useNavigate();
@@ -57,7 +72,15 @@ function MyBookings() {
 
   // Handle booking cancellation
   const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm("Are you sure you want to cancel this booking?")) {
+    // Check if booking can be cancelled (only PENDING_PAYMENT)
+    const booking = bookings.find(b => b.id === bookingId);
+    
+    if (booking && booking.status !== 'PENDING_PAYMENT') {
+      alert("This booking cannot be cancelled. Please contact admin support for assistance.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to cancel this booking? This action cannot be undone.")) {
       return;
     }
 
@@ -76,8 +99,8 @@ function MyBookings() {
         alert("Booking cancelled successfully");
         fetchBookings(); // Refresh bookings
       } else {
-        const error = await response.json();
-        alert(`Cancellation failed: ${error.error || "Please try again"}`);
+        const errorData = await response.json();
+        alert(`Cancellation failed: ${errorData.error || "Please try again"}`);
       }
     } catch (err) {
       console.error("Cancellation error:", err);
@@ -89,11 +112,15 @@ function MyBookings() {
   const getStatusBadge = (status) => {
     const statusLower = status.toLowerCase();
     const styles = {
-      pending: "bg-yellow-100 text-yellow-800",
-      completed: "bg-green-100 text-green-800",
-      canceled: "bg-red-100 text-red-800",
-      confirmed: "bg-blue-100 text-blue-800",
-      default: "bg-gray-100 text-gray-800"
+      'pending_payment': "bg-yellow-100 text-yellow-800",
+      'payment_received': "bg-blue-100 text-blue-800",
+      'approved': "bg-green-100 text-green-800",
+      'rejected': "bg-red-100 text-red-800",
+      'cancelled': "bg-gray-100 text-gray-800",
+      'pending': "bg-yellow-100 text-yellow-800",
+      'completed': "bg-green-100 text-green-800",
+      'canceled': "bg-gray-100 text-gray-800",
+      'default': "bg-gray-100 text-gray-800"
     };
 
     return styles[statusLower] || styles.default;
@@ -102,34 +129,59 @@ function MyBookings() {
   // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return "Invalid date";
+    }
   };
 
   // Format price
   const formatPrice = (price) => {
     if (!price) return "MK0";
-    return `MK${price.toLocaleString('en-US')}`;
+    return `MK${parseFloat(price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   // Calculate days until check-in
   const getDaysUntilCheckIn = (checkInDate) => {
     if (!checkInDate) return null;
-    const today = new Date();
-    const checkIn = new Date(checkInDate);
-    const diffTime = checkIn - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkIn = new Date(checkInDate);
+      checkIn.setHours(0, 0, 0, 0);
+      const diffTime = checkIn - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 0;
+    } catch (e) {
+      return null;
+    }
   };
 
   // Open booking details
   const openBookingDetails = (booking) => {
     setSelectedBooking(booking);
     setShowDetailsModal(true);
+  };
+
+  // Get status display name
+  const getStatusDisplay = (status) => {
+    const statusMap = {
+      'PENDING_PAYMENT': 'Pending Payment',
+      'PAYMENT_RECEIVED': 'Payment Received',
+      'APPROVED': 'Approved',
+      'REJECTED': 'Rejected',
+      'CANCELLED': 'Cancelled',
+      'PENDING': 'Pending',
+      'COMPLETED': 'Completed',
+      'CANCELED': 'Cancelled'
+    };
+    return statusMap[status] || status;
   };
 
   // Loading state
@@ -204,7 +256,7 @@ function MyBookings() {
                 Refresh
               </button>
               <button
-                onClick={() => navigate("/find-hostel")}
+                onClick={() => navigate("/findhostel")}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
               >
                 Book New Hostel
@@ -216,6 +268,22 @@ function MyBookings() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Warning Banner - Bookings cannot be cancelled */}
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-start">
+            <svg className="w-6 h-6 text-red-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.77-.833-2.54 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div>
+              <h3 className="font-bold text-red-800">Important Notice</h3>
+              <p className="text-red-700 text-sm">
+                Bookings cannot be cancelled once submitted. Only bookings with "PENDING_PAYMENT" status can be cancelled. 
+                For any changes to other bookings, please contact admin support.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Stats and Filters */}
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -237,9 +305,9 @@ function MyBookings() {
             <div className="bg-white rounded-xl shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Pending</p>
+                  <p className="text-sm text-gray-500">Pending Payment</p>
                   <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {bookings.filter(b => b.status.toLowerCase() === 'pending').length}
+                    {bookings.filter(b => b.status === 'PENDING_PAYMENT').length}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
@@ -251,9 +319,9 @@ function MyBookings() {
             <div className="bg-white rounded-xl shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Completed</p>
+                  <p className="text-sm text-gray-500">Approved</p>
                   <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {bookings.filter(b => b.status.toLowerCase() === 'completed').length}
+                    {bookings.filter(b => b.status === 'APPROVED').length}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -265,9 +333,9 @@ function MyBookings() {
             <div className="bg-white rounded-xl shadow p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Canceled</p>
+                  <p className="text-sm text-gray-500">Cancelled</p>
                   <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {bookings.filter(b => b.status.toLowerCase() === 'canceled').length}
+                    {bookings.filter(b => b.status === 'CANCELLED').length}
                   </p>
                 </div>
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
@@ -279,7 +347,7 @@ function MyBookings() {
 
           {/* Filter Buttons */}
           <div className="flex space-x-2 mb-6">
-            {["all", "pending", "completed", "canceled"].map((filter) => (
+            {["all", "PENDING_PAYMENT", "APPROVED", "CANCELLED"].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
@@ -289,10 +357,10 @@ function MyBookings() {
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                 }`}
               >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
+                {getStatusDisplay(filter)}
                 {filter !== "all" && (
                   <span className="ml-2 bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded">
-                    {bookings.filter(b => b.status.toLowerCase() === filter).length}
+                    {bookings.filter(b => b.status === filter).length}
                   </span>
                 )}
               </button>
@@ -311,7 +379,7 @@ function MyBookings() {
               <p className="text-gray-500 mb-4">
                 {activeFilter === "all" 
                   ? "You haven't made any bookings yet." 
-                  : `No ${activeFilter} bookings found.`}
+                  : `No ${getStatusDisplay(activeFilter).toLowerCase()} bookings found.`}
               </p>
               {activeFilter !== "all" && (
                 <button
@@ -334,6 +402,7 @@ function MyBookings() {
             <div className="divide-y divide-gray-200">
               {filteredBookings.map((booking) => {
                 const daysUntilCheckIn = getDaysUntilCheckIn(booking.check_in_date);
+                const canCancel = booking.status === 'PENDING_PAYMENT';
                 
                 return (
                   <div key={booking.id} className="p-6 hover:bg-gray-50 transition">
@@ -350,7 +419,7 @@ function MyBookings() {
                             </p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(booking.status)}`}>
-                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                            {getStatusDisplay(booking.status)}
                           </span>
                         </div>
                         
@@ -393,13 +462,17 @@ function MyBookings() {
                           View Details
                         </button>
                         
-                        {booking.status.toLowerCase() === "pending" && (
+                        {canCancel ? (
                           <button
                             onClick={() => handleCancelBooking(booking.id)}
-                            className="px-4 py-2 text-red-600 hover:text-red-800 font-medium"
+                            className="px-4 py-2 bg-red-100 text-red-600 hover:bg-red-200 font-medium rounded-lg"
                           >
                             Cancel Booking
                           </button>
+                        ) : (
+                          <div className="text-sm text-gray-500">
+                            Cannot cancel this booking
+                          </div>
                         )}
                       </div>
                     </div>
@@ -447,13 +520,15 @@ function MyBookings() {
               <div className={`mb-6 p-4 rounded-lg ${getStatusBadge(selectedBooking.status)}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold">Status: {selectedBooking.status.toUpperCase()}</h3>
+                    <h3 className="text-lg font-bold">Status: {getStatusDisplay(selectedBooking.status)}</h3>
                     <p className="text-sm">Booking ID: {selectedBooking.id}</p>
                   </div>
                   <span className="text-2xl">
-                    {selectedBooking.status.toLowerCase() === 'completed' && '✓'}
-                    {selectedBooking.status.toLowerCase() === 'pending' && '⏳'}
-                    {selectedBooking.status.toLowerCase() === 'canceled' && '✗'}
+                    {selectedBooking.status === 'APPROVED' && '✓'}
+                    {selectedBooking.status === 'PENDING_PAYMENT' && '⏳'}
+                    {selectedBooking.status === 'CANCELLED' && '✗'}
+                    {selectedBooking.status === 'PAYMENT_RECEIVED' && '💰'}
+                    {selectedBooking.status === 'REJECTED' && '❌'}
                   </span>
                 </div>
               </div>
@@ -505,7 +580,7 @@ function MyBookings() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Room price:</span>
-                        <span className="font-medium">{formatPrice(selectedBooking.room?.price_per_month || selectedBooking.total_price)}</span>
+                        <span className="font-medium">{formatPrice(selectedBooking.room?.price_per_month || selectedBooking.total_price - 20000)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Booking fee:</span>
@@ -532,9 +607,26 @@ function MyBookings() {
                 </div>
               )}
               
+              {/* Cancellation Notice */}
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-red-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.77-.833-2.54 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div>
+                    <h4 className="font-bold text-red-800 mb-1">Cancellation Policy</h4>
+                    <p className="text-sm text-red-700">
+                      {selectedBooking.status === 'PENDING_PAYMENT' 
+                        ? "This booking can still be cancelled as payment is pending."
+                        : "This booking cannot be cancelled. Please contact admin support for assistance."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
               {/* Actions */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                {selectedBooking.status.toLowerCase() === "pending" && (
+                {selectedBooking.status === 'PENDING_PAYMENT' && (
                   <button
                     onClick={() => {
                       handleCancelBooking(selectedBooking.id);
@@ -561,22 +653,6 @@ function MyBookings() {
       )}
     </div>
   );
-}
-
-// Helper function to get CSRF token
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
 }
 
 export default MyBookings;

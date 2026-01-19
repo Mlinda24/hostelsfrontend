@@ -6,11 +6,13 @@ function Dashboard({ onLogout }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSideNavOpen, setIsSideNavOpen] = useState(false);
+  const [bookingLimit, setBookingLimit] = useState({ active: 0, max: 2, canBook: true });
   const navigate = useNavigate();
 
   // Fetch dashboard data when component mounts
   useEffect(() => {
     fetchDashboardData();
+    checkBookingLimit();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -34,8 +36,28 @@ function Dashboard({ onLogout }) {
     }
   };
 
+  const checkBookingLimit = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/check-booking-limit/", {
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBookingLimit({
+          active: data.active_bookings,
+          max: data.max_allowed,
+          canBook: data.can_book_more
+        });
+      }
+    } catch (err) {
+      console.error("Error checking booking limit:", err);
+    }
+  };
+
   const handleRefresh = () => {
     fetchDashboardData();
+    checkBookingLimit();
   };
 
   const handleLogout = async () => {
@@ -142,6 +164,13 @@ function Dashboard({ onLogout }) {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Booking Limit Badge */}
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                bookingLimit.canBook ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}>
+                <span>Bookings: {bookingLimit.active}/{bookingLimit.max}</span>
+              </div>
+              
               <button
                 onClick={handleRefresh}
                 className="flex items-center text-gray-600 hover:text-blue-600"
@@ -189,7 +218,7 @@ function Dashboard({ onLogout }) {
             >
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            </svg>
             </button>
           </div>
 
@@ -202,6 +231,12 @@ function Dashboard({ onLogout }) {
             </div>
             <h3 className="text-lg font-bold text-gray-800">{dashboardData?.username}</h3>
             <p className="text-sm text-gray-500">{dashboardData?.email || 'Student'}</p>
+            {/* Booking Limit in Profile */}
+            <div className={`mt-3 px-3 py-1 rounded-full text-xs font-medium inline-block ${
+              bookingLimit.canBook ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
+              {bookingLimit.active}/{bookingLimit.max} Bookings
+            </div>
           </div>
 
           {/* Quick Actions List */}
@@ -229,11 +264,15 @@ function Dashboard({ onLogout }) {
                 setIsSideNavOpen(false);
               }}
               className="w-full flex items-center p-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition"
+              disabled={!bookingLimit.canBook}
             >
               <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               Find Hostel
+              {!bookingLimit.canBook && (
+                <span className="ml-auto text-xs text-red-500">(Limit Reached)</span>
+              )}
             </button>
 
             <button
@@ -302,7 +341,11 @@ function Dashboard({ onLogout }) {
             </h4>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Bookings</span>
+                <span className="text-sm text-gray-600">Active Bookings</span>
+                <span className="font-semibold">{bookingLimit.active}/{bookingLimit.max}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Total Bookings</span>
                 <span className="font-semibold">{dashboardData?.bookings_count || 0}</span>
               </div>
               <div className="flex justify-between items-center">
@@ -361,8 +404,11 @@ function Dashboard({ onLogout }) {
               </div>
             </div>
             <div className="mt-4">
-              <span className="text-sm text-green-600 font-medium">
-                You can only book maximum of two rooms
+              <span className={`text-sm font-medium ${bookingLimit.canBook ? 'text-green-600' : 'text-red-600'}`}>
+                {bookingLimit.canBook 
+                  ? `You can book ${bookingLimit.max - bookingLimit.active} more room${bookingLimit.max - bookingLimit.active !== 1 ? 's' : ''}`
+                  : "You have reached the 2-room limit"
+                }
               </span>
             </div>
           </div>
@@ -436,6 +482,29 @@ function Dashboard({ onLogout }) {
             </div>
           </div>
         </div>
+
+        {/* Booking Limit Alert */}
+        {!bookingLimit.canBook && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-red-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.77-.833-2.54 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <div>
+                <h4 className="font-bold text-red-800 mb-1">Booking Limit Reached</h4>
+                <p className="text-red-700">
+                  You have reached the maximum limit of 2 active bookings. Please cancel an existing booking before booking a new room.
+                </p>
+                <button 
+                  onClick={() => navigate("/mybookings")}
+                  className="mt-2 text-red-800 hover:text-red-900 font-medium underline"
+                >
+                  Go to My Bookings to manage →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Recent Activity */}
         <div className="bg-white rounded-xl shadow p-6 mb-8">

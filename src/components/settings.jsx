@@ -5,177 +5,127 @@ function Settings() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
-  
-  // Account form state
-  const [accountForm, setAccountForm] = useState({
-    username: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    phone_number: "",
-    registration_number: ""
-  });
-  
-  const [originalForm, setOriginalForm] = useState({}); // Store original values
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState({ type: "", text: "" });
-  const [hasChanges, setHasChanges] = useState(false);
+  const [error, setError] = useState(null);
+  const [dashboardInfo, setDashboardInfo] = useState(null);
 
   // Fetch user data on component mount
   useEffect(() => {
     fetchUserData();
+    fetchDashboardData();
   }, []);
-
-  // Check for changes whenever form changes
-  useEffect(() => {
-    const formChanged = JSON.stringify(accountForm) !== JSON.stringify(originalForm);
-    setHasChanges(formChanged);
-  }, [accountForm, originalForm]);
 
   const fetchUserData = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("http://localhost:8000/api/user/profile/", {
+      setError(null);
+      
+      // First try to get user info from dashboard endpoint
+      const dashboardResponse = await fetch("http://localhost:8000/api/dashboard/", {
         credentials: "include",
       });
 
-      if (response.status === 401) {
+      if (dashboardResponse.status === 401) {
         navigate("/login");
         return;
       }
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch user data: ${response.status}`);
+      if (dashboardResponse.ok) {
+        const data = await dashboardResponse.json();
+        console.log("Dashboard data:", data);
+        
+        // Try to get more user details from auth endpoint
+        try {
+          const authResponse = await fetch("http://localhost:8000/api/check-auth/", {
+            credentials: "include",
+          });
+          
+          if (authResponse.ok) {
+            const authData = await authResponse.json();
+            console.log("Auth data:", authData);
+            
+            // Combine data from both endpoints
+            const combinedData = {
+              username: authData.user?.username || data.username || "User",
+              email: authData.user?.email || "Not available",
+              id: authData.user?.id || "N/A",
+              ...data
+            };
+            setUserData(combinedData);
+          } else {
+            // Use dashboard data only
+            setUserData({
+              username: data.username || "User",
+              email: "Not available",
+              id: "N/A",
+              ...data
+            });
+          }
+        } catch (authErr) {
+          console.log("Auth endpoint failed, using dashboard data only");
+          setUserData({
+            username: data.username || "User",
+            email: "Not available",
+            id: "N/A",
+            ...data
+          });
+        }
+      } else {
+        // Try auth endpoint directly
+        try {
+          const authResponse = await fetch("http://localhost:8000/api/check-auth/", {
+            credentials: "include",
+          });
+          
+          if (authResponse.ok) {
+            const authData = await authResponse.json();
+            console.log("Auth data direct:", authData);
+            setUserData({
+              username: authData.user?.username || "User",
+              email: authData.user?.email || "Not available",
+              id: authData.user?.id || "N/A",
+              is_authenticated: true
+            });
+          } else {
+            throw new Error("Unable to fetch user data");
+          }
+        } catch (authErr) {
+          // Final fallback: check localStorage
+          const storedUser = localStorage.getItem('userData');
+          if (storedUser) {
+            try {
+              const data = JSON.parse(storedUser);
+              setUserData(data);
+            } catch (e) {
+              console.error("Failed to parse stored user data:", e);
+              setError("Please login to view your profile");
+            }
+          } else {
+            setError("Unable to load profile. Please login again.");
+          }
+        }
       }
-
-      const data = await response.json();
-      console.log("Fetched user data:", data); // Debug log
-      setUserData(data);
-      
-      // Populate account form with user data
-      const formData = {
-        username: data.username || "",
-        email: data.email || "",
-        first_name: data.first_name || "",
-        last_name: data.last_name || "",
-        phone_number: data.phone_number || "",
-        registration_number: data.registration_number || ""
-      };
-      
-      setAccountForm(formData);
-      setOriginalForm(formData); // Store original values for change detection
       
     } catch (err) {
       console.error("Settings error:", err);
-      setSaveMessage({ 
-        type: "error", 
-        text: "Failed to load account information. Please try again." 
-      });
-      
-      // Fallback to local storage if available
-      const storedUser = localStorage.getItem('userData');
-      if (storedUser) {
-        try {
-          const data = JSON.parse(storedUser);
-          const formData = {
-            username: data.username || "",
-            email: data.email || "",
-            first_name: data.first_name || "",
-            last_name: data.last_name || "",
-            phone_number: data.phone_number || "",
-            registration_number: data.registration_number || ""
-          };
-          setAccountForm(formData);
-          setOriginalForm(formData);
-        } catch (e) {
-          console.error("Failed to parse stored user data:", e);
-        }
-      }
+      setError("Failed to load account information. Please check if the server is running.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle form changes
-  const handleAccountChange = (e) => {
-    const { name, value } = e.target;
-    setAccountForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Save account information to backend
-  const saveAccountInfo = async () => {
-    if (!hasChanges) {
-      setSaveMessage({ type: "info", text: "No changes to save." });
-      setTimeout(() => setSaveMessage({ type: "", text: "" }), 3000);
-      return;
-    }
-
-    setIsSaving(true);
-    setSaveMessage({ type: "", text: "" });
-    
+  const fetchDashboardData = async () => {
     try {
-      const csrfToken = getCookie('csrftoken');
-      if (!csrfToken) {
-        throw new Error("CSRF token not found");
-      }
-
-      console.log("Sending update:", accountForm); // Debug log
-
-      const response = await fetch("http://localhost:8000/api/user/profile/update/", {
-        method: "POST",
+      const response = await fetch("http://localhost:8000/api/dashboard/", {
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-        body: JSON.stringify(accountForm),
       });
-
-      const data = await response.json();
-      console.log("Update response:", data); // Debug log
-
+      
       if (response.ok) {
-        setSaveMessage({ 
-          type: "success", 
-          text: data.message || "Account information updated successfully!" 
-        });
-        setOriginalForm(accountForm); // Update original values
-        setHasChanges(false);
-        
-        // Update local storage if data was stored there
-        if (localStorage.getItem('userData')) {
-          const storedData = JSON.parse(localStorage.getItem('userData'));
-          const updatedData = { ...storedData, ...accountForm };
-          localStorage.setItem('userData', JSON.stringify(updatedData));
-        }
-        
-        setTimeout(() => setSaveMessage({ type: "", text: "" }), 3000);
-      } else {
-        setSaveMessage({ 
-          type: "error", 
-          text: data.error || data.detail || "Failed to update account" 
-        });
+        const data = await response.json();
+        setDashboardInfo(data);
       }
     } catch (err) {
-      console.error("Save error:", err);
-      setSaveMessage({ 
-        type: "error", 
-        text: `Network error: ${err.message}. Please check your connection.` 
-      });
-    } finally {
-      setIsSaving(false);
+      console.log("Could not fetch dashboard data:", err);
     }
-  };
-
-  // Reset form to original values
-  const resetForm = () => {
-    setAccountForm(originalForm);
-    setHasChanges(false);
-    setSaveMessage({ type: "info", text: "Changes discarded." });
-    setTimeout(() => setSaveMessage({ type: "", text: "" }), 3000);
   };
 
   // Loading state
@@ -184,8 +134,45 @@ function Settings() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mx-auto mb-6"></div>
-          <h2 className="text-2xl font-semibold text-gray-700">Loading Account Information...</h2>
-          <p className="text-gray-500 mt-2">Fetching your profile data from server</p>
+          <h2 className="text-2xl font-semibold text-gray-700">Loading Profile Information...</h2>
+          <p className="text-gray-500 mt-2">Please wait while we fetch your details</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && !userData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.77-.833-2.54 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Connection Issue</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={fetchUserData}
+              className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition"
+            >
+              Back to Dashboard
+            </button>
+            <button
+              onClick={() => navigate("/login")}
+              className="w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition"
+            >
+              Go to Login
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -207,268 +194,274 @@ function Settings() {
                 </svg>
                 Back to Dashboard
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">Account Information</h1>
+              <h1 className="text-2xl font-bold text-gray-800">My Profile</h1>
             </div>
             
-            {hasChanges && (
-              <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
-                Unsaved Changes
-              </span>
-            )}
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => {
+                  fetchUserData();
+                  fetchDashboardData();
+                }}
+                className="flex items-center text-gray-600 hover:text-blue-600 text-sm"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Success/Error Message */}
-        {saveMessage.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            saveMessage.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 
-            saveMessage.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-            'bg-blue-50 text-blue-800 border border-blue-200'
-          }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                {saveMessage.type === 'success' ? (
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ) : saveMessage.type === 'error' ? (
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                )}
-                <span>{saveMessage.text}</span>
+        {/* Security Warning Banner */}
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Security Advisory</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>
+                  🔒 <strong>Keep your profile information confidential.</strong><br/>
+                  • Do not share your account details with anyone<br/>
+                  • For any profile changes or support, contact the system administrator directly<br/>
+                  • Report any suspicious activity immediately
+                </p>
               </div>
-              <button
-                onClick={() => setSaveMessage({ type: "", text: "" })}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Account Information Card */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          {/* Profile Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mr-4">
-                  <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white">
-                    {accountForm.first_name || accountForm.username} {accountForm.last_name}
-                  </h2>
-                  <p className="text-blue-100">{accountForm.email}</p>
-                  <p className="text-blue-100 text-sm">@{accountForm.username}</p>
+        {/* Profile Card */}
+        <div className="bg-white rounded-xl shadow overflow-hidden mb-8">
+          {/* Profile Header with Avatar */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6">
+            <div className="flex items-center">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mr-6 shadow-lg">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <span className="text-2xl font-bold text-white">
+                    {userData?.username?.[0]?.toUpperCase() || 'U'}
+                  </span>
                 </div>
               </div>
-              <div className="hidden md:block text-right">
+              <div>
+                <h2 className="text-3xl font-bold text-white mb-2">
+                  {userData?.username || 'User'}
+                </h2>
+                <p className="text-blue-100">{userData?.email || 'Email not available'}</p>
                 <p className="text-blue-100 text-sm">User ID: #{userData?.id || 'N/A'}</p>
-                <p className="text-blue-100 text-sm">Last Updated: Today</p>
               </div>
             </div>
           </div>
 
-          {/* Account Details Form */}
+          {/* Profile Details */}
           <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-800">Edit Account Details</h3>
-              {hasChanges && (
-                <button
-                  onClick={resetForm}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 font-medium"
-                >
-                  Discard Changes
-                </button>
-              )}
-            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-4 border-b border-gray-200">
+              Account Information
+            </h3>
             
             <div className="space-y-6">
-              {/* Username and Email */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    name="username"
-                    value={accountForm.username}
-                    onChange={handleAccountChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-gray-50"
-                    disabled
-                  />
-                  <p className="text-sm text-gray-500 mt-1">Username cannot be changed</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={accountForm.email}
-                    onChange={handleAccountChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    required
-                  />
-                  <p className="text-sm text-gray-500 mt-1">Used for notifications and login</p>
-                </div>
-              </div>
-
-              {/* First and Last Name */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    name="first_name"
-                    value={accountForm.first_name}
-                    onChange={handleAccountChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    name="last_name"
-                    value={accountForm.last_name}
-                    onChange={handleAccountChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Contact Information */}
+              {/* Basic Information */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  name="phone_number"
-                  value={accountForm.phone_number}
-                  onChange={handleAccountChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="+265 XXX XXX XXX"
-                />
-                <p className="text-sm text-gray-500 mt-1">Used for SMS notifications</p>
+                <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+                  Basic Information
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Username</p>
+                    <p className="font-medium text-gray-900">{userData?.username || "Not set"}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Email Address</p>
+                    <p className="font-medium text-gray-900">{userData?.email || "Not set"}</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Account Status</p>
+                    <p className="font-medium text-green-600">Active</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-500">Authentication</p>
+                    <p className="font-medium text-gray-900">Logged In</p>
+                  </div>
+                </div>
               </div>
 
-              {/* Registration Number */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Registration Number
-                </label>
-                <input
-                  type="text"
-                  name="registration_number"
-                  value={accountForm.registration_number}
-                  onChange={handleAccountChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  placeholder="BSC-COM-21-001"
-                />
-                <p className="text-sm text-gray-500 mt-1">Your university registration number</p>
-              </div>
+              {/* Booking Information */}
+              {dashboardInfo && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
+                    Booking Status
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-sm text-gray-500">Active Bookings</p>
+                      <p className="text-2xl font-bold text-blue-600">{dashboardInfo.active_bookings || 0}</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Max allowed: {dashboardInfo.max_bookings_allowed || 2}
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                      <p className="text-sm text-gray-500">Pending Payments</p>
+                      <p className="text-2xl font-bold text-yellow-600">{dashboardInfo.pending_payments || 0}</p>
+                      <p className="text-xs text-gray-500 mt-1">Waiting for payment</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <p className="text-sm text-gray-500">Total Bookings</p>
+                      <p className="text-2xl font-bold text-green-600">{dashboardInfo.bookings_count || 0}</p>
+                      <p className="text-xs text-gray-500 mt-1">All time bookings</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              {/* Save Button */}
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex justify-between items-center">
+              {/* Important Notice */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-purple-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   <div>
-                    <button
-                      onClick={saveAccountInfo}
-                      disabled={isSaving || !hasChanges}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                    >
-                      {isSaving ? (
-                        <>
-                          <svg className="animate-spin h-5 w-5 mr-2 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                          </svg>
-                          Saving to Server...
-                        </>
-                      ) : (
-                        "Save Changes to Server"
-                      )}
-                    </button>
-                    <p className="text-sm text-gray-500 mt-2">
-                      {hasChanges 
-                        ? "Click to save your changes to the server"
-                        : "No changes to save"}
+                    <h4 className="font-medium text-purple-800">Important Notice</h4>
+                    <p className="text-sm text-purple-700 mt-1">
+                      All profile information is managed by the system administrator. 
+                      For any changes to your account details, please contact the hostel management office.
                     </p>
                   </div>
-                  
-                  <button
-                    onClick={fetchUserData}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Refresh Data
-                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Data Source Info */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="flex items-start">
-            <svg className="w-5 h-5 text-blue-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <p className="text-sm text-blue-800 font-medium">Data Source Information</p>
-              <p className="text-sm text-blue-600 mt-1">
-                This information is fetched from and saved to the server. 
-                Changes are synced in real-time. Username cannot be modified for security reasons.
-              </p>
+        {/* Support & Contact Information */}
+        <div className="bg-white rounded-xl shadow overflow-hidden">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
+            <h3 className="text-xl font-bold text-white">Need Help or Updates?</h3>
+            <p className="text-green-100 mt-2">Contact the system administrator</p>
+          </div>
+          
+          <div className="p-6">
+            <div className="space-y-6">
+              {/* Why Contact Admin */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  <div>
+                    <h4 className="font-medium text-blue-800">Contact Administrator For:</h4>
+                    <ul className="text-blue-700 text-sm mt-2 space-y-1 ml-4 list-disc">
+                      <li>Updating your personal information (name, email, etc.)</li>
+                      <li>Changing your account password</li>
+                      <li>Reporting incorrect account information</li>
+                      <li>Account deactivation requests</li>
+                      <li>Booking support and queries</li>
+                      <li>Payment-related issues</li>
+                      <li>Technical support with the system</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Privacy Guidelines */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-red-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <div>
+                    <h4 className="font-medium text-red-800">Privacy & Security Guidelines</h4>
+                    <div className="text-red-700 text-sm mt-1 space-y-2">
+                      <p><strong>⚠️ KEEP YOUR INFORMATION SECRET:</strong></p>
+                      <ul className="ml-4 space-y-1">
+                        <li>• Never share your username or password with anyone</li>
+                        <li>• Always log out from public or shared computers</li>
+                        <li>• Do not save passwords on shared devices</li>
+                        <li>• Report any unauthorized access immediately</li>
+                        <li>• Keep your contact information private</li>
+                      </ul>
+                      <p className="mt-2">
+                        Your information is protected and used only for hostel management purposes.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Details */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-800 mb-3">Contact Information</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm text-gray-500">Administration Office</p>
+                    <p className="font-medium">Hostel Management Office</p>
+                    <p className="text-sm text-gray-600">Main Administration Building, Room 101</p>
+                  </div>
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm text-gray-500">Support Hours</p>
+                    <p className="font-medium">Monday - Friday</p>
+                    <p className="text-sm text-gray-600">8:00 AM - 5:00 PM</p>
+                  </div>
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm text-gray-500">Email Support</p>
+                    <p className="font-medium">admin@hostels.ac.mw</p>
+                    <p className="text-sm text-gray-600">For account-related issues</p>
+                  </div>
+                  <div className="p-3 bg-white rounded border">
+                    <p className="text-sm text-gray-500">Payment Support</p>
+                    <p className="font-medium">payments@hostels.ac.mw</p>
+                    <p className="text-sm text-gray-600">For payment-related queries</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="pt-4 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={() => navigate("/dashboard")}
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 font-medium shadow hover:shadow-lg transition-all"
+                  >
+                    Return to Dashboard
+                  </button>
+                  <button
+                    onClick={() => navigate("/mybookings")}
+                    className="px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 font-medium transition-colors"
+                  >
+                    View My Bookings
+                  </button>
+                  <button
+                    onClick={() => navigate("/find-hostel")}
+                    className="px-6 py-3 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 font-medium transition-colors"
+                  >
+                    Find Hostel
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-3 text-center">
+                  Your profile is read-only for security. Contact admin for any changes.
+                </p>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Footer Note */}
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-500">
+            Profile last refreshed: {new Date().toLocaleString()} | 
+            Your account is managed by system administrators for security
+          </p>
         </div>
       </main>
     </div>
   );
-}
-
-// Helper function to get CSRF token
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
 }
 
 export default Settings;
