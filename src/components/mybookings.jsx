@@ -1,5 +1,37 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCalendarAlt,
+  faClock,
+  faCheckCircle,
+  faTimesCircle,
+  faExclamationTriangle,
+  faHome,
+  faArrowLeft,
+  faSyncAlt,
+  faMoneyBillWave,
+  faBuilding,
+  faDoorClosed,
+  faMapMarkerAlt,
+  faPhone,
+  faUser,
+  faReceipt,
+  faExclamationCircle,
+  faSpinner,
+  faCalendarDay,
+  faCalendarCheck,
+  faCalendarTimes,
+  faCalendar,
+  faIdCard,
+  faInfoCircle,
+  faBan,
+  faTimes,
+  faMapPin,
+  faBed,
+  faRuler,
+  faUsers
+} from '@fortawesome/free-solid-svg-icons';
 
 function getCookie(name) {
   let cookieValue = null;
@@ -144,7 +176,7 @@ function MyBookings() {
   // Format price
   const formatPrice = (price) => {
     if (!price) return "MK0";
-    return `MK${parseFloat(price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `MK${parseFloat(price).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   // Calculate days until check-in
@@ -187,9 +219,12 @@ function MyBookings() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mx-auto mb-6"></div>
+          <FontAwesomeIcon 
+            icon={faSpinner} 
+            className="animate-spin text-blue-600 text-5xl mx-auto mb-6"
+          />
           <h2 className="text-2xl font-semibold text-gray-700">Loading Bookings...</h2>
           <p className="text-gray-500 mt-2">Fetching your booking history</p>
         </div>
@@ -200,23 +235,23 @@ function MyBookings() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg p-8 text-center border border-gray-300">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">⚠️</span>
+            <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 text-2xl" />
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Error</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="space-y-3">
             <button
               onClick={fetchBookings}
-              className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition"
+              className="w-full bg-blue-600 text-white font-semibold py-3 rounded hover:bg-blue-700"
             >
               Try Again
             </button>
             <button
               onClick={() => navigate("/dashboard")}
-              className="w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-50 transition"
+              className="w-full border border-gray-300 text-gray-700 font-medium py-3 rounded hover:bg-gray-50"
             >
               Back to Dashboard
             </button>
@@ -227,9 +262,9 @@ function MyBookings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white border-b border-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -237,9 +272,7 @@ function MyBookings() {
                 onClick={() => navigate("/dashboard")}
                 className="flex items-center text-gray-600 hover:text-blue-600 mr-4"
               >
-                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
+                <FontAwesomeIcon icon={faArrowLeft} className="w-5 h-5 mr-1" />
                 Back to Dashboard
               </button>
               <h1 className="text-2xl font-bold text-gray-800">My Bookings</h1>
@@ -250,14 +283,12 @@ function MyBookings() {
                 onClick={fetchBookings}
                 className="flex items-center text-gray-600 hover:text-blue-600"
               >
-                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+                <FontAwesomeIcon icon={faSyncAlt} className="w-5 h-5 mr-1" />
                 Refresh
               </button>
               <button
                 onClick={() => navigate("/findhostel")}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
               >
                 Book New Hostel
               </button>
@@ -267,13 +298,11 @@ function MyBookings() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Warning Banner - Bookings cannot be cancelled */}
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Warning Banner */}
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded">
           <div className="flex items-start">
-            <svg className="w-6 h-6 text-red-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.77-.833-2.54 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
+            <FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-red-600 mr-3 mt-0.5" />
             <div>
               <h3 className="font-bold text-red-800">Important Notice</h3>
               <p className="text-red-700 text-sm">
@@ -284,74 +313,14 @@ function MyBookings() {
           </div>
         </div>
 
-        {/* Stats and Filters */}
-        <div className="mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {/* Stats Cards */}
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total Bookings</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {bookings.length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 text-xl">📅</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Pending Payment</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {bookings.filter(b => b.status === 'PENDING_PAYMENT').length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span className="text-yellow-600 text-xl">⏳</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Approved</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {bookings.filter(b => b.status === 'APPROVED').length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <span className="text-green-600 text-xl">✓</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Cancelled</p>
-                  <p className="text-3xl font-bold text-gray-800 mt-2">
-                    {bookings.filter(b => b.status === 'CANCELLED').length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                  <span className="text-red-600 text-xl">✗</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter Buttons */}
-          <div className="flex space-x-2 mb-6">
+        {/* Filter Buttons */}
+        <div className="mb-6">
+          <div className="flex space-x-2">
             {["all", "PENDING_PAYMENT", "APPROVED", "CANCELLED"].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
+                className={`px-4 py-2 rounded font-medium ${
                   activeFilter === filter
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -368,12 +337,12 @@ function MyBookings() {
           </div>
         </div>
 
-        {/* Bookings List */}
-        <div className="bg-white rounded-xl shadow overflow-hidden">
+        {/* Bookings List - Exactly like screenshot */}
+        <div className="space-y-4">
           {filteredBookings.length === 0 ? (
-            <div className="text-center py-16">
+            <div className="text-center py-16 bg-white rounded border border-gray-300">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl text-gray-400">📅</span>
+                <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-3xl" />
               </div>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">No bookings found</h3>
               <p className="text-gray-500 mb-4">
@@ -384,7 +353,7 @@ function MyBookings() {
               {activeFilter !== "all" && (
                 <button
                   onClick={() => setActiveFilter("all")}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
                 >
                   View All Bookings
                 </button>
@@ -392,207 +361,200 @@ function MyBookings() {
               <div className="mt-6">
                 <button
                   onClick={() => navigate("/findhostel")}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
                 >
                   Find a Hostel
                 </button>
               </div>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
-              {filteredBookings.map((booking) => {
-                const daysUntilCheckIn = getDaysUntilCheckIn(booking.check_in_date);
-                const canCancel = booking.status === 'PENDING_PAYMENT';
-                
-                return (
-                  <div key={booking.id} className="p-6 hover:bg-gray-50 transition">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between">
-                      {/* Booking Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-800">
-                              {booking.room?.room_number || "N/A"} - {booking.room?.hostel?.name || "Unknown Hostel"}
-                            </h3>
-                            <p className="text-gray-600 text-sm">
-                              {booking.room?.hostel?.location || "Location not specified"}
-                            </p>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(booking.status)}`}>
-                            {getStatusDisplay(booking.status)}
-                          </span>
+            filteredBookings.map((booking) => {
+              const canCancel = booking.status === 'PENDING_PAYMENT';
+              
+              return (
+                <div key={booking.id} className="bg-white rounded border border-gray-300 overflow-hidden">
+                  {/* Booking ID badge in top right corner */}
+                  <div className="absolute top-4 right-4">
+                    <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                      ID: {booking.id}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <div className="flex">
+                      {/* Hostel Image */}
+                      <div className="w-32 h-32 mr-4">
+                        <div className="w-full h-full bg-gray-200 rounded flex items-center justify-center">
+                          <FontAwesomeIcon icon={faBuilding} className="text-gray-400 text-3xl" />
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                          <div>
-                            <p className="text-sm text-gray-500">Check-in</p>
-                            <p className="font-medium text-gray-800">{formatDate(booking.check_in_date)}</p>
-                            {daysUntilCheckIn > 0 && (
-                              <p className="text-sm text-green-600">
-                                {daysUntilCheckIn} day{daysUntilCheckIn !== 1 ? 's' : ''} to go
-                              </p>
-                            )}
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm text-gray-500">Check-out</p>
-                            <p className="font-medium text-gray-800">{formatDate(booking.check_out_date)}</p>
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm text-gray-500">Total Price</p>
-                            <p className="text-xl font-bold text-blue-600">{formatPrice(booking.total_price)}</p>
-                          </div>
-                        </div>
-                        
-                        {booking.special_requests && (
-                          <div className="mt-4">
-                            <p className="text-sm text-gray-500">Special Requests</p>
-                            <p className="text-gray-700">{booking.special_requests}</p>
-                          </div>
-                        )}
                       </div>
                       
-                      {/* Actions */}
-                      <div className="mt-4 md:mt-0 md:ml-6 flex flex-col space-y-2">
-                        <button
-                          onClick={() => openBookingDetails(booking)}
-                          className="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          View Details
-                        </button>
-                        
-                        {canCancel ? (
-                          <button
-                            onClick={() => handleCancelBooking(booking.id)}
-                            className="px-4 py-2 bg-red-100 text-red-600 hover:bg-red-200 font-medium rounded-lg"
-                          >
-                            Cancel Booking
-                          </button>
-                        ) : (
-                          <div className="text-sm text-gray-500">
-                            Cannot cancel this booking
+                      {/* Booking Details */}
+                      <div className="flex-1">
+                        {/* Hostel Name and Location */}
+                        <div className="mb-3">
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {booking.room?.hostel?.name || "Unknown Hostel"}
+                          </h3>
+                          <div className="flex items-center text-gray-600 text-sm mt-1">
+                            <FontAwesomeIcon icon={faMapPin} className="w-4 h-4 mr-1" />
+                            <span>{booking.room?.hostel?.location || "Location not specified"}</span>
                           </div>
-                        )}
+                        </div>
+                        
+                        {/* Room Details Grid */}
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center">
+                              <FontAwesomeIcon icon={faBed} className="w-4 h-4 text-gray-500 mr-2" />
+                              <span className="text-gray-700">Single Room</span>
+                            </div>
+                            <div className="flex items-center">
+                              <FontAwesomeIcon icon={faRuler} className="w-4 h-4 text-gray-500 mr-2" />
+                              <span className="text-gray-700">2km From Campus</span>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center">
+                              <FontAwesomeIcon icon={faCalendarDay} className="w-4 h-4 text-gray-500 mr-2" />
+                              <span className="text-gray-700">Check-in: {formatDate(booking.check_in_date)}</span>
+                            </div>
+                            <div className="flex items-center">
+                              <FontAwesomeIcon icon={faCalendarCheck} className="w-4 h-4 text-gray-500 mr-2" />
+                              <span className="text-gray-700">Check-out: {formatDate(booking.check_out_date)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Price and Actions */}
+                        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                          <div>
+                            <div className="text-2xl font-bold text-blue-600">
+                              {formatPrice(booking.total_price || booking.room?.price_per_month)}
+                            </div>
+                            <div className="text-sm text-gray-500">/Semester</div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadge(booking.status)}`}>
+                              {getStatusDisplay(booking.status)}
+                            </span>
+                            <button
+                              onClick={() => openBookingDetails(booking)}
+                              className="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium text-sm border border-blue-600 rounded hover:bg-blue-50"
+                            >
+                              View Details
+                            </button>
+                            {canCancel && (
+                              <button
+                                onClick={() => handleCancelBooking(booking.id)}
+                                className="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-medium text-sm border border-red-200 rounded"
+                              >
+                                Cancel Booking
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
-                    {/* Booking Dates Timeline */}
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <span className="mr-2">📅</span>
-                          <span>Booked on: {formatDate(booking.created_at)}</span>
-                        </div>
-                        <div className="flex items-center">
-                          <span className="mr-2">🆔</span>
-                          <span>Booking ID: {booking.id}</span>
-                        </div>
+                    {/* Special Requests */}
+                    {booking.special_requests && (
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <p className="text-sm text-gray-500 mb-1">Special Requests</p>
+                        <p className="text-gray-700 text-sm">{booking.special_requests}</p>
                       </div>
-                    </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })
           )}
         </div>
       </main>
 
-      {/* Booking Details Modal */}
+      {/* Booking Details Modal - Simplified to match screenshot */}
       {showDetailsModal && selectedBooking && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800">Booking Details</h2>
-              <button
-                onClick={() => {
-                  setShowDetailsModal(false);
-                  setSelectedBooking(null);
-                }}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            
+          <div className="bg-white rounded max-w-md w-full">
             <div className="p-6">
-              {/* Status Banner */}
-              <div className={`mb-6 p-4 rounded-lg ${getStatusBadge(selectedBooking.status)}`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold">Status: {getStatusDisplay(selectedBooking.status)}</h3>
-                    <p className="text-sm">Booking ID: {selectedBooking.id}</p>
-                  </div>
-                  <span className="text-2xl">
-                    {selectedBooking.status === 'APPROVED' && '✓'}
-                    {selectedBooking.status === 'PENDING_PAYMENT' && '⏳'}
-                    {selectedBooking.status === 'CANCELLED' && '✗'}
-                    {selectedBooking.status === 'PAYMENT_RECEIVED' && '💰'}
-                    {selectedBooking.status === 'REJECTED' && '❌'}
-                  </span>
+              {/* Modal Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Booking Details</h2>
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(false);
+                    setSelectedBooking(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
+              </div>
+              
+              {/* Hostel Image and Basic Info */}
+              <div className="mb-6">
+                <div className="w-full h-48 bg-gray-200 rounded mb-4 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faBuilding} className="text-gray-400 text-4xl" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {selectedBooking.room?.hostel?.name || "Unknown Hostel"}
+                </h3>
+                <div className="flex items-center text-gray-600 mb-1">
+                  <FontAwesomeIcon icon={faMapPin} className="w-4 h-4 mr-2" />
+                  <span>{selectedBooking.room?.hostel?.location || "Location not specified"}</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <FontAwesomeIcon icon={faBed} className="w-4 h-4 mr-2" />
+                  <span>Single Room • 2km From Campus</span>
                 </div>
               </div>
               
-              {/* Hostel and Room Info */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Hostel & Room Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">Hostel Details</h4>
-                    <p className="text-gray-700">{selectedBooking.room?.hostel?.name || "N/A"}</p>
-                    <p className="text-gray-600 text-sm">{selectedBooking.room?.hostel?.location || "N/A"}</p>
-                    <p className="text-gray-600 text-sm">Contact: {selectedBooking.room?.hostel?.contact || "N/A"}</p>
+              {/* Price Section */}
+              <div className="bg-blue-50 p-4 rounded mb-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatPrice(selectedBooking.total_price || selectedBooking.room?.price_per_month)}
+                    </div>
+                    <div className="text-sm text-gray-500">/Semester</div>
                   </div>
-                  
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">Room Details</h4>
-                    <p className="text-gray-700">Room {selectedBooking.room?.room_number || "N/A"}</p>
-                    <p className="text-gray-600 text-sm">Type: {selectedBooking.room?.room_type || "N/A"}</p>
-                    <p className="text-gray-600 text-sm">Capacity: {selectedBooking.room?.capacity || "N/A"} person(s)</p>
+                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                    ID: {selectedBooking.id}
                   </div>
                 </div>
               </div>
               
-              {/* Dates and Pricing */}
+              {/* Dates */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Dates & Pricing</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Stay Period</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Check-in:</span>
-                        <span className="font-medium">{formatDate(selectedBooking.check_in_date)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Check-out:</span>
-                        <span className="font-medium">{formatDate(selectedBooking.check_out_date)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Booked on:</span>
-                        <span className="font-medium">{formatDate(selectedBooking.created_at)}</span>
-                      </div>
-                    </div>
+                <h4 className="font-bold text-gray-800 mb-3">Stay Period</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-gray-50 rounded">
+                    <p className="text-sm text-gray-500 mb-1">Check-in</p>
+                    <p className="font-medium">{formatDate(selectedBooking.check_in_date)}</p>
                   </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-700 mb-2">Payment Summary</h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Room price:</span>
-                        <span className="font-medium">{formatPrice(selectedBooking.room?.price_per_month || selectedBooking.total_price - 20000)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Booking fee:</span>
-                        <span className="font-medium">MK20,000</span>
-                      </div>
-                      <div className="border-t pt-2">
-                        <div className="flex justify-between font-bold">
-                          <span>Total cost:</span>
-                          <span className="text-blue-600">{formatPrice(selectedBooking.total_price)}</span>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="p-3 bg-gray-50 rounded">
+                    <p className="text-sm text-gray-500 mb-1">Check-out</p>
+                    <p className="font-medium">{formatDate(selectedBooking.check_out_date)}</p>
+                  </div>
+                </div>
+                <div className="mt-4 p-3 bg-gray-50 rounded">
+                  <p className="text-sm text-gray-500 mb-1">Booked On</p>
+                  <p className="font-medium">{formatDate(selectedBooking.created_at)}</p>
+                </div>
+              </div>
+              
+              {/* Status */}
+              <div className="mb-6">
+                <h4 className="font-bold text-gray-800 mb-2">Booking Status</h4>
+                <div className={`p-3 rounded ${getStatusBadge(selectedBooking.status)}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{getStatusDisplay(selectedBooking.status)}</span>
+                    <span className="text-xl">
+                      {selectedBooking.status === 'APPROVED' && <FontAwesomeIcon icon={faCheckCircle} className="text-green-600" />}
+                      {selectedBooking.status === 'PENDING_PAYMENT' && <FontAwesomeIcon icon={faClock} className="text-yellow-600" />}
+                      {selectedBooking.status === 'CANCELLED' && <FontAwesomeIcon icon={faTimesCircle} className="text-red-600" />}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -600,22 +562,20 @@ function MyBookings() {
               {/* Special Requests */}
               {selectedBooking.special_requests && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Special Requests</h3>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-gray-700">{selectedBooking.special_requests}</p>
+                  <h4 className="font-bold text-gray-800 mb-2">Special Requests</h4>
+                  <div className="p-3 bg-gray-50 rounded">
+                    <p className="text-gray-700 text-sm">{selectedBooking.special_requests}</p>
                   </div>
                 </div>
               )}
               
               {/* Cancellation Notice */}
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded">
                 <div className="flex items-start">
-                  <svg className="w-5 h-5 text-red-600 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.77-.833-2.54 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-red-600 mr-2 mt-0.5" />
                   <div>
-                    <h4 className="font-bold text-red-800 mb-1">Cancellation Policy</h4>
-                    <p className="text-sm text-red-700">
+                    <h4 className="font-bold text-red-800 mb-1 text-sm">Cancellation Policy</h4>
+                    <p className="text-xs text-red-700">
                       {selectedBooking.status === 'PENDING_PAYMENT' 
                         ? "This booking can still be cancelled as payment is pending."
                         : "This booking cannot be cancelled. Please contact admin support for assistance."}
@@ -632,7 +592,7 @@ function MyBookings() {
                       handleCancelBooking(selectedBooking.id);
                       setShowDetailsModal(false);
                     }}
-                    className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-medium text-sm"
                   >
                     Cancel Booking
                   </button>
@@ -642,7 +602,7 @@ function MyBookings() {
                     setShowDetailsModal(false);
                     setSelectedBooking(null);
                   }}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 font-medium text-sm"
                 >
                   Close
                 </button>

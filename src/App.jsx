@@ -8,6 +8,13 @@ import FindHostel from './components/findhostel';
 import Notifications from './components/Notifications';
 import MyBookings from './components/mybookings';
 import Settings  from './components/settings';
+// Add these debug logs after imports
+console.log('🔍 DEBUG: Checking imports...');
+console.log('FindHostel component:', FindHostel);
+console.log('MyBookings component:', MyBookings);
+console.log('Are they the same?', FindHostel === MyBookings);
+console.log('FindHostel name:', FindHostel.name || 'No name');
+console.log('MyBookings name:', MyBookings.name || 'No name');
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
