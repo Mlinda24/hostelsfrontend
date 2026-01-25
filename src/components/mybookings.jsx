@@ -299,19 +299,6 @@ function MyBookings() {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Warning Banner */}
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded">
-          <div className="flex items-start">
-            <FontAwesomeIcon icon={faExclamationTriangle} className="w-5 h-5 text-red-600 mr-3 mt-0.5" />
-            <div>
-              <h3 className="font-bold text-red-800">Important Notice</h3>
-              <p className="text-red-700 text-sm">
-                Bookings cannot be cancelled once submitted. Only bookings with "PENDING_PAYMENT" status can be cancelled. 
-                For any changes to other bookings, please contact admin support.
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Filter Buttons */}
         <div className="mb-6">
@@ -320,7 +307,7 @@ function MyBookings() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded font-medium ${
+                className={`px-4 py-2 rounded-full font-medium ${
                   activeFilter === filter
                     ? "bg-blue-600 text-white"
                     : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
@@ -340,7 +327,7 @@ function MyBookings() {
         {/* Bookings List - Exactly like screenshot */}
         <div className="space-y-4">
           {filteredBookings.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded border border-gray-300">
+            <div className="text-center py-16 bg-white rounded-[25px] border border-gray-300">
               <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FontAwesomeIcon icon={faCalendarAlt} className="text-gray-400 text-3xl" />
               </div>
@@ -372,7 +359,7 @@ function MyBookings() {
               const canCancel = booking.status === 'PENDING_PAYMENT';
               
               return (
-                <div key={booking.id} className="bg-white rounded border border-gray-300 overflow-hidden">
+                <div key={booking.id} className="bg-white rounded-xl border border-gray-300 overflow-hidden">
                   {/* Booking ID badge in top right corner */}
                   <div className="absolute top-4 right-4">
                     <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">

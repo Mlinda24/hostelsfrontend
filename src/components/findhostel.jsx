@@ -652,88 +652,171 @@ function FindHostel() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredHostels.map((hostel) => (
-              <div key={hostel.id} className="bg-white rounded-xl shadow overflow-hidden">
-                <div className="p-6 border-b">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">{hostel.name}</h3>
-                      <div className="flex items-center text-gray-600 mb-2">
-                        <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-gray-500" />
-                        <span>{hostel.location}</span>
+              <div key={hostel.id} className="bg-white rounded-xl shadow overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="flex flex-col md:flex-row">
+                  {/* Image Gallery Section */}
+                  <div className="md:w-2/5">
+                    {hostel.images && hostel.images.length > 0 ? (
+                      <div className="relative h-48 md:h-full">
+                        {/* Main Image */}
+                        <div className="relative h-full w-full overflow-hidden rounded-tl-xl md:rounded-l-xl">
+                          <img
+                            src={hostel.images[0]?.image_url || hostel.images[0]?.image}
+                            alt={hostel.name}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              e.target.src = "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=300&fit=crop";
+                              e.target.alt = "Default hostel image";
+                            }}
+                          />
+                          
+                          {/* Image counter badge */}
+                          {hostel.images.length > 1 && (
+                            <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-xs">
+                              +{hostel.images.length - 1} more
+                            </div>
+                          )}
+                          
+                          {/* Image navigation dots (if multiple images) */}
+                          {hostel.images.length > 1 && (
+                            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+                              {hostel.images.slice(0, 3).map((_, index) => (
+                                <div
+                                  key={index}
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    index === 0 
+                                      ? 'bg-white' 
+                                      : 'bg-white bg-opacity-50'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center text-gray-600">
-                        <FontAwesomeIcon icon={faWalking} className="mr-2 text-gray-500" />
-                        <span>{hostel.distance || "Near campus"}</span>
+                    ) : (
+                      <div className="h-48 md:h-full bg-gradient-to-br from-blue-100 to-blue-200 rounded-tl-xl md:rounded-l-xl flex flex-col items-center justify-center p-4">
+                        <FontAwesomeIcon icon={faBuilding} className="text-blue-300 text-4xl mb-2" />
+                        <p className="text-gray-500 text-center text-sm">No images available</p>
                       </div>
-                      {/* Show image count if available */}
-                      {hostel.images && hostel.images.length > 0 && (
-                        <div className="flex items-center text-gray-500 text-sm mt-1">
-                          <FontAwesomeIcon icon={faImages} className="mr-2" />
-                          <span>{hostel.images.length} photo{hostel.images.length !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                  
+                  {/* Content Section */}
+                  <div className="md:w-3/5 p-4 md:p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-800 mb-2 hover:text-blue-600 transition-colors">
+                          {hostel.name}
+                        </h3>
+                        <div className="space-y-2">
+                          <div className="flex items-center text-gray-600">
+                            <FontAwesomeIcon icon={faMapMarkerAlt} className="mr-2 text-gray-500 w-4" />
+                            <span className="text-sm">{hostel.location}</span>
+                          </div>
+                          <div className="flex items-center text-gray-600">
+                            <FontAwesomeIcon icon={faWalking} className="mr-2 text-gray-500 w-4" />
+                            <span className="text-sm">{hostel.distance || "Near campus"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => openHostelDetails(hostel)}
+                        className="ml-4 px-3 py-1 md:px-4 md:py-2 text-blue-600 hover:text-blue-800 font-medium flex items-center text-sm md:text-base whitespace-nowrap"
+                      >
+                        <FontAwesomeIcon icon={faEye} className="mr-1 md:mr-2" />
+                        Details
+                      </button>
+                    </div>
+                    
+                    {/* Room count and status */}
+                    <div className="mt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-500">
+                          {hostel.rooms.length} room{hostel.rooms.length !== 1 ? 's' : ''} available
+                        </span>
+                        {hostel.images && hostel.images.length > 0 && (
+                          <div className="flex items-center text-gray-400 text-xs">
+                            <FontAwesomeIcon icon={faImages} className="mr-1" />
+                            <span>{hostel.images.length} photo{hostel.images.length !== 1 ? 's' : ''}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Price preview - show min price */}
+                      {hostel.rooms.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-sm text-gray-600">From</p>
+                          <p className="text-lg font-bold text-blue-600">
+                            MK{formatPrice(Math.min(...hostel.rooms.map(r => r.price_per_month)))}/month
+                          </p>
                         </div>
                       )}
                     </div>
-                    <button
-                      onClick={() => openHostelDetails(hostel)}
-                      className="px-4 py-2 text-blue-600 hover:text-blue-800 font-medium flex items-center"
-                    >
-                      <FontAwesomeIcon icon={faEye} className="mr-2" />
-                      View Details
-                    </button>
                   </div>
                 </div>
-
-                <div className="p-6">
-                  <h4 className="text-lg font-semibold text-gray-700 mb-4">Available Rooms ({hostel.rooms.length})</h4>
+                
+                {/* Available Rooms Section */}
+                <div className="border-t p-4 md:p-6">
+                  <h4 className="text-lg font-semibold text-gray-700 mb-3">Available Rooms ({hostel.rooms.length})</h4>
                   {hostel.rooms.length === 0 ? (
-                    <div className="text-center py-4 text-gray-500">
+                    <div className="text-center py-3 text-gray-500 bg-gray-50 rounded-lg">
                       No rooms available in this hostel
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {hostel.rooms.map((room) => (
-                        <div key={room.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition">
-                          <div className="flex justify-between items-start">
+                    <div className="space-y-3">
+                      {hostel.rooms.slice(0, 2).map((room) => ( // Show only first 2 rooms
+                        <div key={room.id} className="border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition">
+                          <div className="flex justify-between items-center">
                             <div>
                               <h5 className="font-medium text-gray-800 flex items-center">
                                 {room.room_number} - {getRoomTypeDisplay(room.room_type)}
                               </h5>
-                              <p className="text-sm text-gray-600 mt-1">{room.description}</p>
-                              <div className="flex items-center mt-2 space-x-4">
-                                <span className="text-sm text-gray-500 flex items-center">
+                              <div className="flex items-center mt-1 space-x-3">
+                                <span className="text-xs text-gray-500 flex items-center">
                                   <FontAwesomeIcon icon={faUser} className="mr-1" />
-                                  {room.capacity} person{room.capacity !== 1 ? 's' : ''}
+                                  {room.capacity}
                                 </span>
-                                <span className="text-sm text-gray-500 flex items-center">
+                                <span className="text-xs text-gray-500 flex items-center">
                                   <FontAwesomeIcon icon={faBed} className="mr-1" />
-                                  {room.beds} bed{room.beds !== 1 ? 's' : ''}
+                                  {room.beds}
                                 </span>
-                                <span className="text-sm text-gray-500 flex items-center">
+                                <span className="text-xs text-gray-500 flex items-center">
                                   <FontAwesomeIcon icon={faBath} className="mr-1" />
-                                  {room.has_private_bathroom ? "Private" : "Shared"} bathroom
+                                  {room.has_private_bathroom ? "Private" : "Shared"}
                                 </span>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-2xl font-bold text-blue-600 flex items-center justify-end">
-                                MK{formatPrice(room.price_per_month)}/month
+                              <p className="text-lg font-bold text-blue-600">
+                                MK{formatPrice(room.price_per_month)}
                               </p>
                               <button
                                 onClick={() => openBookingModal(room)}
                                 disabled={!bookingLimit.canBook}
-                                className={`mt-2 px-4 py-2 rounded-lg font-medium flex items-center ${
+                                className={`mt-1 px-3 py-1 rounded-lg text-sm font-medium ${
                                   bookingLimit.canBook 
-                                 ? 'bg-[#455A6480] text-white hover:bg-[#455A64]' 
-                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  ? 'bg-[#455A6480] text-white hover:bg-[#455A64]' 
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
                               >
-                                <FontAwesomeIcon icon={faCreditCard} className="mr-2" />
-                                {bookingLimit.canBook ? 'Book Now' : 'Limit Reached'}
+                                {bookingLimit.canBook ? 'Book' : 'Limit'}
                               </button>
                             </div>
                           </div>
                         </div>
                       ))}
+                      
+                      {/* Show "View more" if there are more than 2 rooms */}
+                      {hostel.rooms.length > 2 && (
+                        <button
+                          onClick={() => openHostelDetails(hostel)}
+                          className="w-full text-center text-blue-600 hover:text-blue-800 text-sm font-medium pt-2"
+                        >
+                          View {hostel.rooms.length - 2} more rooms →
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

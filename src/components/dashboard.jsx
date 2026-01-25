@@ -27,7 +27,15 @@ function Dashboard({ onLogout }) {
       }
 
       const data = await response.json();
-      setDashboardData(data);
+      
+      // Ensure recent_activity is always an array
+      const enhancedData = {
+        ...data,
+        recent_activity: data.recent_activity || []
+      };
+      
+      setDashboardData(enhancedData);
+      
     } catch (err) {
       setError(err.message);
       console.error("Dashboard error:", err);
@@ -218,13 +226,13 @@ function Dashboard({ onLogout }) {
             >
               <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+              </svg>
             </button>
           </div>
 
           {/* User Profile Section */}
           <div className="mb-8 text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
               </svg>
@@ -389,7 +397,7 @@ function Dashboard({ onLogout }) {
         {/* Stats Cards with Proper Icons */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Bookings Card */}
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="bg-white rounded-xl shadow p-6 border border-black-100 hover:border-blue-300">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Total Bookings</p>
@@ -414,7 +422,7 @@ function Dashboard({ onLogout }) {
           </div>
 
           {/* Notifications Card */}
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="bg-white rounded-xl shadow p-6 border border-black-100 hover:border-blue-300">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Unread Notifications</p>
@@ -439,7 +447,7 @@ function Dashboard({ onLogout }) {
           </div>
 
           {/* Hostels Card */}
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="bg-white rounded-xl shadow p-6 border border-black-100 hover:border-blue-300">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-500">Available Hostels</p>
@@ -483,29 +491,6 @@ function Dashboard({ onLogout }) {
           </div>
         </div>
 
-        {/* Booking Limit Alert */}
-        {!bookingLimit.canBook && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <div className="flex items-start">
-              <svg className="w-6 h-6 text-red-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.77-.833-2.54 0L4.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              <div>
-                <h4 className="font-bold text-red-800 mb-1">Booking Limit Reached</h4>
-                <p className="text-red-700">
-                  You have reached the maximum limit of 2 active bookings. Please cancel an existing booking before booking a new room.
-                </p>
-                <button 
-                  onClick={() => navigate("/mybookings")}
-                  className="mt-2 text-red-800 hover:text-red-900 font-medium underline"
-                >
-                  Go to My Bookings to manage →
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Recent Activity */}
         <div className="bg-white rounded-xl shadow p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
@@ -523,11 +508,11 @@ function Dashboard({ onLogout }) {
               dashboardData.recent_activity.map((activity, index) => (
                 <div key={index} className="flex items-center p-3 hover:bg-gray-50 rounded-lg">
                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                    {activity.status === 'completed' ? (
+                    {activity.status === 'completed' || activity.status === 'approved' || activity.status === 'payment_received' ? (
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                    ) : activity.status === 'new' ? (
+                    ) : activity.status === 'new' || activity.status === 'read' ? (
                       <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
@@ -542,8 +527,10 @@ function Dashboard({ onLogout }) {
                     <p className="text-sm text-gray-500">{activity.time}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    activity.status === 'completed' 
+                    activity.status === 'completed' || activity.status === 'approved' || activity.status === 'payment_received' 
                       ? 'bg-green-100 text-green-800'
+                      : activity.status === 'new'
+                      ? 'bg-blue-100 text-blue-800'
                       : 'bg-yellow-100 text-yellow-800'
                   }`}>
                     {activity.status}

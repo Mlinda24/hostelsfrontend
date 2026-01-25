@@ -217,50 +217,9 @@ function Settings() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Security Warning Banner */}
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Security Advisory</h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>
-                  🔒 <strong>Keep your profile information confidential.</strong><br/>
-                  • Do not share your account details with anyone<br/>
-                  • For any profile changes or support, contact the system administrator directly<br/>
-                  • Report any suspicious activity immediately
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Profile Card */}
         <div className="bg-white rounded-xl shadow overflow-hidden mb-8">
-          {/* Profile Header with Avatar */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6">
-            <div className="flex items-center">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mr-6 shadow-lg">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {userData?.username?.[0]?.toUpperCase() || 'U'}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <h2 className="text-3xl font-bold text-white mb-2">
-                  {userData?.username || 'User'}
-                </h2>
-                <p className="text-blue-100">{userData?.email || 'Email not available'}</p>
-                <p className="text-blue-100 text-sm">User ID: #{userData?.id || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-
           {/* Profile Details */}
           <div className="p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-6 pb-4 border-b border-gray-200">
@@ -293,34 +252,6 @@ function Settings() {
                 </div>
               </div>
 
-              {/* Booking Information */}
-              {dashboardInfo && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">
-                    Booking Status
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                      <p className="text-sm text-gray-500">Active Bookings</p>
-                      <p className="text-2xl font-bold text-blue-600">{dashboardInfo.active_bookings || 0}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Max allowed: {dashboardInfo.max_bookings_allowed || 2}
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                      <p className="text-sm text-gray-500">Pending Payments</p>
-                      <p className="text-2xl font-bold text-yellow-600">{dashboardInfo.pending_payments || 0}</p>
-                      <p className="text-xs text-gray-500 mt-1">Waiting for payment</p>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                      <p className="text-sm text-gray-500">Total Bookings</p>
-                      <p className="text-2xl font-bold text-green-600">{dashboardInfo.bookings_count || 0}</p>
-                      <p className="text-xs text-gray-500 mt-1">All time bookings</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Important Notice */}
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                 <div className="flex items-start">
@@ -331,7 +262,7 @@ function Settings() {
                     <h4 className="font-medium text-purple-800">Important Notice</h4>
                     <p className="text-sm text-purple-700 mt-1">
                       All profile information is managed by the system administrator. 
-                      For any changes to your account details, please contact the hostel management office.
+                      For any changes to your account details, please send email through Bsc-21-22@unima.ac.mw
                     </p>
                   </div>
                 </div>
@@ -342,11 +273,6 @@ function Settings() {
 
         {/* Support & Contact Information */}
         <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6">
-            <h3 className="text-xl font-bold text-white">Need Help or Updates?</h3>
-            <p className="text-green-100 mt-2">Contact the system administrator</p>
-          </div>
-          
           <div className="p-6">
             <div className="space-y-6">
               {/* Why Contact Admin */}
@@ -370,40 +296,10 @@ function Settings() {
                 </div>
               </div>
 
-              {/* Privacy Guidelines */}
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-start">
-                  <svg className="w-6 h-6 text-red-600 mr-3 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <div>
-                    <h4 className="font-medium text-red-800">Privacy & Security Guidelines</h4>
-                    <div className="text-red-700 text-sm mt-1 space-y-2">
-                      <p><strong>⚠️ KEEP YOUR INFORMATION SECRET:</strong></p>
-                      <ul className="ml-4 space-y-1">
-                        <li>• Never share your username or password with anyone</li>
-                        <li>• Always log out from public or shared computers</li>
-                        <li>• Do not save passwords on shared devices</li>
-                        <li>• Report any unauthorized access immediately</li>
-                        <li>• Keep your contact information private</li>
-                      </ul>
-                      <p className="mt-2">
-                        Your information is protected and used only for hostel management purposes.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               {/* Contact Details */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <h4 className="font-medium text-gray-800 mb-3">Contact Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-3 bg-white rounded border">
-                    <p className="text-sm text-gray-500">Administration Office</p>
-                    <p className="font-medium">Hostel Management Office</p>
-                    <p className="text-sm text-gray-600">Main Administration Building, Room 101</p>
-                  </div>
                   <div className="p-3 bg-white rounded border">
                     <p className="text-sm text-gray-500">Support Hours</p>
                     <p className="font-medium">Monday - Friday</p>
@@ -411,13 +307,26 @@ function Settings() {
                   </div>
                   <div className="p-3 bg-white rounded border">
                     <p className="text-sm text-gray-500">Email Support</p>
-                    <p className="font-medium">admin@hostels.ac.mw</p>
+                    <p className="font-medium">Bsc-21-22@unima.ac.mw</p>
                     <p className="text-sm text-gray-600">For account-related issues</p>
                   </div>
                   <div className="p-3 bg-white rounded border">
                     <p className="text-sm text-gray-500">Payment Support</p>
-                    <p className="font-medium">payments@hostels.ac.mw</p>
-                    <p className="text-sm text-gray-600">For payment-related queries</p>
+                    <div className="flex items-center mt-2">
+                      <span className="text-green-600 mr-2">📱</span>
+                      <div>
+                        <p className="font-medium">+265 881 779 699</p>
+                        <a
+                          href="https://wa.me/265881779699?text=Hi%20Hostel%20Support%2C%20I%20need%20help%20with%20payment%20or%20bookings."
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-green-600 hover:text-green-700 underline"
+                        >
+                          Chat on WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2">For payment-related queries</p>
                   </div>
                 </div>
               </div>
@@ -438,7 +347,7 @@ function Settings() {
                     View My Bookings
                   </button>
                   <button
-                    onClick={() => navigate("/find-hostel")}
+                    onClick={() => navigate("/findhostel")}
                     className="px-6 py-3 border-2 border-green-600 text-green-600 rounded-lg hover:bg-green-50 font-medium transition-colors"
                   >
                     Find Hostel
